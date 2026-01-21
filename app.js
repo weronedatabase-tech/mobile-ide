@@ -59,33 +59,22 @@ function setTab(tab) {
     }
 }
 
-// --- API CLIENT (THE FIX IS HERE) ---
+// --- API CLIENT ---
 async function api(action, payload = {}) {
     loading(true);
     try {
-        // We use a specialized fetch configuration to avoid CORS Preflight
         const res = await fetch(API_URL, {
             method: 'POST',
-            // FORCE text/plain to stop the browser from sending an OPTIONS request
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-            },
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ action: action, accessKey: storedKey, ...payload })
         });
 
         const text = await res.text();
         let json;
-        
-        // Try to parse JSON. If it fails, we know we got HTML (Error Page)
-        try {
-            json = JSON.parse(text);
-        } catch (err) {
-            console.error("Server HTML Response:", text);
-            throw new Error("Server Error. The backend returned HTML (likely a Google Error Page) instead of JSON.");
-        }
+        try { json = JSON.parse(text); } 
+        catch (err) { throw new Error("Server returned HTML (Error) instead of JSON."); }
 
         loading(false);
-        
         if (!json.success) {
             if(json.error && json.error.includes("Wrong Password")) logout();
             throw new Error(json.error || "Unknown Error");
@@ -123,17 +112,30 @@ async function createProject() {
     openProject(res.id, res.name, res.scriptId, res.files);
 }
 
-function openProject(id, name, scriptId, existingFiles = null) {
+// UPDATED: Now fetches files from backend
+async function openProject(id, name, scriptId, existingFiles = null) {
     currentProject = { id: id, name: name, scriptId: scriptId };
     
+    nav('editor'); // Switch view immediately
+
     if (existingFiles) {
+        // Just created, files are local
         files = existingFiles;
         document.getElementById('editor').value = files[activeTab];
     } else {
-        files = { gs: '// Loading...', html: '<!-- Loading... -->' };
+        // Opening existing, fetch from backend
+        files = { gs: '// Fetching latest code...', html: '<!-- Fetching latest code... -->' };
         document.getElementById('editor').value = files[activeTab];
+        
+        try {
+            const fetchedFiles = await api('GET_FILES', { scriptId: scriptId });
+            files = fetchedFiles;
+            // Update the editor with the fetched content
+            document.getElementById('editor').value = files[activeTab];
+        } catch(e) {
+            document.getElementById('editor').value = "// Error fetching code. Try again.";
+        }
     }
-    nav('editor');
 }
 
 async function save() {
