@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-// Your specific Backend URL is now configured below:
+// PASTE YOUR URL HERE (Must end in /exec)
 const API_URL = "https://script.google.com/macros/s/AKfycbxLAyqH_m33NSQi3TCzW0DR-gGQYWvXlGfngTnaVn_V5zYGUnpg17JzYxidgNc2v2TD/exec"; 
 
 // --- STATE MANAGEMENT ---
@@ -10,7 +10,6 @@ let activeTab = 'gs';
 
 // --- INITIALIZATION ---
 window.onload = () => {
-    // Check if user is logged in locally
     if (storedKey) {
         nav('dashboard');
         loadProjects();
@@ -23,11 +22,8 @@ window.onload = () => {
 function login() {
     const input = document.getElementById('accessKeyInput').value;
     if (!input) return alert("Enter password");
-    
-    // Save key locally so user stays logged in
     storedKey = input;
     localStorage.setItem('ide_key', input);
-    
     nav('dashboard');
     loadProjects();
 }
@@ -39,22 +35,16 @@ function logout() {
 
 // --- NAVIGATION & UI ---
 function nav(view) {
-    // Hide all views
     document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
-    // Show selected view
     document.getElementById(`view-${view}`).classList.remove('hidden');
-    // Toggle logout button visibility
     document.getElementById('logoutBtn').classList.toggle('hidden', view === 'login');
 }
 
 function setTab(tab) {
-    // Save current editor content to memory before switching
     files[activeTab] = document.getElementById('editor').value;
     activeTab = tab;
-    // Load new content
     document.getElementById('editor').value = files[activeTab] || '';
     
-    // UI Styling for Tabs
     const tGs = document.getElementById('tab-gs');
     const tHtml = document.getElementById('tab-html');
     const activeClass = "border-blue-600 text-blue-600";
@@ -69,30 +59,34 @@ function setTab(tab) {
     }
 }
 
-// --- API CLIENT ---
+// --- API CLIENT (THE FIX IS HERE) ---
 async function api(action, payload = {}) {
     loading(true);
     try {
+        // We use a specialized fetch configuration to avoid CORS Preflight
         const res = await fetch(API_URL, {
             method: 'POST',
-            // Send accessKey with every request for security
+            // FORCE text/plain to stop the browser from sending an OPTIONS request
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
             body: JSON.stringify({ action: action, accessKey: storedKey, ...payload })
         });
 
-        // ERROR HANDLING: Check if response is JSON
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            // If we got HTML (like a 404 or Login page), throw a clear error
-            const text = await res.text();
-            console.error("Server returned HTML instead of JSON:", text);
-            throw new Error("Connection Failed. Permissions error or Wrong URL.");
+        const text = await res.text();
+        let json;
+        
+        // Try to parse JSON. If it fails, we know we got HTML (Error Page)
+        try {
+            json = JSON.parse(text);
+        } catch (err) {
+            console.error("Server HTML Response:", text);
+            throw new Error("Server Error. The backend returned HTML (likely a Google Error Page) instead of JSON.");
         }
 
-        const json = await res.json();
         loading(false);
         
         if (!json.success) {
-            // Security: If backend rejects password, logout immediately
             if(json.error && json.error.includes("Wrong Password")) logout();
             throw new Error(json.error || "Unknown Error");
         }
@@ -136,7 +130,6 @@ function openProject(id, name, scriptId, existingFiles = null) {
         files = existingFiles;
         document.getElementById('editor').value = files[activeTab];
     } else {
-        // Reset buffers if loading fresh
         files = { gs: '// Loading...', html: '<!-- Loading... -->' };
         document.getElementById('editor').value = files[activeTab];
     }
@@ -150,25 +143,16 @@ async function save() {
 }
 
 async function deploy() {
-    // 1. Save current state locally
     files[activeTab] = document.getElementById('editor').value;
-    
-    // 2. Confirm
     if(!confirm("Deploy to live web? This takes about 30 seconds.")) return;
     
-    // 3. Execute Deployment
     const res = await api('DEPLOY_PROJECT', { id: currentProject.id, files: files });
     
-    // 4. Refresh Dashboard list so the link appears there next time
     loadProjects();
     
-    // 5. Show Link (Mobile Friendly)
     const url = res.appUrl;
     const userClickedOk = prompt("Deployment Successful! \n\nCopy your App URL below or click OK to open:", url);
-    
-    if (userClickedOk !== null) {
-        window.open(url, '_blank');
-    }
+    if (userClickedOk !== null) window.open(url, '_blank');
 }
 
 // --- UTILITIES ---
@@ -182,8 +166,7 @@ async function pasteCode() {
         document.getElementById('editor').value = t; 
         files[activeTab] = t; 
     } catch(e) { 
-        // Fallback if browser denies clipboard access
-        alert("Please manually paste (Long press > Paste). Browser blocked clipboard access."); 
+        alert("Please manually paste (Long press > Paste)."); 
     } 
 }
 
@@ -192,17 +175,13 @@ function copyCode() {
     alert("Copied to clipboard"); 
 }
 
-// Theme Logic
 const themeBtn = document.getElementById('themeBtn');
 themeBtn.onclick = () => { 
     document.documentElement.classList.toggle('dark'); 
     localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); 
 };
-
-// Apply saved theme
 if (localStorage.theme === 'dark') document.documentElement.classList.add('dark');
 
-// PWA Service Worker Logic
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
         reg.addEventListener('updatefound', () => {
@@ -215,6 +194,4 @@ if ('serviceWorker' in navigator) {
         });
     });
 }
-
-// Update Button Logic
 document.getElementById('updateBtn').onclick = () => window.location.reload();
