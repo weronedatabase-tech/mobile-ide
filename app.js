@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-// PASTE YOUR URL HERE (Must end in /exec)
+// PASTE YOUR URL HERE
 const API_URL = "https://script.google.com/macros/s/AKfycbxLAyqH_m33NSQi3TCzW0DR-gGQYWvXlGfngTnaVn_V5zYGUnpg17JzYxidgNc2v2TD/exec"; 
 
 // --- STATE MANAGEMENT ---
@@ -87,6 +87,20 @@ async function api(action, payload = {}) {
     }
 }
 
+// --- UTILITIES ---
+
+// THE FIX: Encodes text with Emojis to Base64 safely
+function encode64(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1);
+    }));
+}
+
+function loading(show) { 
+    document.getElementById('loader').classList.toggle('hidden', !show); 
+}
+
 // --- CORE LOGIC ---
 async function loadProjects() {
     const list = await api('GET_PROJECTS');
@@ -112,35 +126,36 @@ async function createProject() {
     openProject(res.id, res.name, res.scriptId, res.files);
 }
 
-// UPDATED: Now fetches files from backend
 async function openProject(id, name, scriptId, existingFiles = null) {
     currentProject = { id: id, name: name, scriptId: scriptId };
-    
-    nav('editor'); // Switch view immediately
+    nav('editor'); 
 
     if (existingFiles) {
-        // Just created, files are local
         files = existingFiles;
         document.getElementById('editor').value = files[activeTab];
     } else {
-        // Opening existing, fetch from backend
         files = { gs: '// Fetching latest code...', html: '<!-- Fetching latest code... -->' };
         document.getElementById('editor').value = files[activeTab];
-        
         try {
             const fetchedFiles = await api('GET_FILES', { scriptId: scriptId });
             files = fetchedFiles;
-            // Update the editor with the fetched content
             document.getElementById('editor').value = files[activeTab];
         } catch(e) {
-            document.getElementById('editor').value = "// Error fetching code. Try again.";
+            document.getElementById('editor').value = "// Error fetching code.";
         }
     }
 }
 
 async function save() {
     files[activeTab] = document.getElementById('editor').value;
-    await api('SAVE_PROJECT', { id: currentProject.id, files: files });
+    
+    // THE FIX: Encode to Base64 before sending
+    const safeFiles = {
+        gs: encode64(files.gs),
+        html: encode64(files.html)
+    };
+
+    await api('SAVE_PROJECT', { id: currentProject.id, files: safeFiles });
     alert("Saved successfully!");
 }
 
@@ -148,18 +163,19 @@ async function deploy() {
     files[activeTab] = document.getElementById('editor').value;
     if(!confirm("Deploy to live web? This takes about 30 seconds.")) return;
     
-    const res = await api('DEPLOY_PROJECT', { id: currentProject.id, files: files });
+    // THE FIX: Encode to Base64 before sending
+    const safeFiles = {
+        gs: encode64(files.gs),
+        html: encode64(files.html)
+    };
+
+    const res = await api('DEPLOY_PROJECT', { id: currentProject.id, files: safeFiles });
     
     loadProjects();
     
     const url = res.appUrl;
     const userClickedOk = prompt("Deployment Successful! \n\nCopy your App URL below or click OK to open:", url);
     if (userClickedOk !== null) window.open(url, '_blank');
-}
-
-// --- UTILITIES ---
-function loading(show) { 
-    document.getElementById('loader').classList.toggle('hidden', !show); 
 }
 
 async function pasteCode() { 
