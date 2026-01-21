@@ -8,14 +8,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
+        /* Mobile tap highlight removal */
         body { -webkit-tap-highlight-color: transparent; }
-        textarea { font-size: 16px; } /* iOS zoom fix */
+        /* Prevent iOS zooming on inputs */
+        textarea, input { font-size: 16px; } 
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-200 h-screen overflow-hidden flex flex-col">
+<!-- UPDATED: h-[100dvh] ensures it fits perfectly on mobile screens with address bars -->
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-200 h-[100dvh] w-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-md px-4 py-3 flex justify-between items-center z-10">
+    <header class="bg-white dark:bg-gray-800 shadow-md px-4 py-3 flex justify-between items-center z-20 flex-none">
         <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">IDE</span>
         <div class="flex gap-3 items-center">
             <button id="updateBtn" class="hidden text-xs bg-indigo-600 text-white px-2 py-1 rounded-full animate-pulse">Update</button>
@@ -24,10 +32,11 @@
         </div>
     </header>
 
-    <main id="main" class="flex-grow relative overflow-hidden">
-
-        <!-- LOGIN -->
-        <div id="view-login" class="absolute inset-0 flex flex-col justify-center items-center p-6 text-center hidden">
+    <!-- Main Content Area -->
+    <main id="main" class="flex-grow relative w-full overflow-hidden">
+        
+        <!-- LOGIN VIEW -->
+        <div id="view-login" class="absolute inset-0 flex flex-col justify-center items-center p-6 text-center hidden z-30 bg-gray-50 dark:bg-gray-900">
             <h1 class="text-3xl font-bold mb-2">My Workspace</h1>
             <p class="text-gray-500 mb-8">Enter access key.</p>
             <div class="w-full max-w-xs flex flex-col gap-4">
@@ -36,41 +45,74 @@
             </div>
         </div>
 
-        <!-- DASHBOARD -->
-        <div id="view-dashboard" class="absolute inset-0 flex flex-col p-4 hidden overflow-y-auto">
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="absolute inset-0 flex flex-col p-4 hidden overflow-y-auto pb-safe">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold">Projects</h2>
-                <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg active:bg-blue-700">+</button>
+                <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg active:bg-blue-700 flex items-center justify-center">+</button>
             </div>
             <div id="projectList" class="grid grid-cols-1 gap-4 pb-20"></div>
         </div>
 
-        <!-- EDITOR -->
-        <div id="view-editor" class="absolute inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 hidden">
-            <div class="flex justify-between items-center p-2 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-                <button onclick="nav('dashboard')" class="text-gray-500 px-2">← Back</button>
+        <!-- EDITOR VIEW -->
+        <div id="view-editor" class="absolute inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 hidden h-full w-full">
+            
+            <!-- Toolbar -->
+            <div class="flex justify-between items-center p-2 bg-white dark:bg-gray-800 border-b dark:border-gray-700 flex-none z-10">
+                <button onclick="nav('dashboard')" class="text-gray-500 px-2 flex items-center gap-1">
+                    <span>←</span> Back
+                </button>
                 <div class="flex gap-2">
-                    <button onclick="save()" class="text-sm bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded font-medium">Save</button>
-                    <button onclick="deploy()" class="text-sm bg-green-600 text-white px-4 py-2 rounded font-medium shadow-md">Deploy 🚀</button>
+                    <button onclick="save()" class="text-sm bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded font-medium active:bg-gray-300">Save</button>
+                    <button onclick="deploy()" class="text-sm bg-green-600 text-white px-4 py-2 rounded font-medium shadow-md active:bg-green-700">Deploy 🚀</button>
                 </div>
             </div>
-            <div class="flex bg-gray-100 dark:bg-gray-900 border-b dark:border-gray-700">
+
+            <!-- Tabs -->
+            <div class="flex bg-gray-100 dark:bg-gray-900 border-b dark:border-gray-700 flex-none z-10">
                 <button onclick="setTab('gs')" id="tab-gs" class="flex-1 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600">Logic (GAS)</button>
                 <button onclick="setTab('html')" id="tab-html" class="flex-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent">UI (HTML)</button>
             </div>
-            <div class="flex-grow relative">
-                <textarea id="editor" class="w-full h-full p-4 bg-transparent font-mono text-sm focus:outline-none resize-none" spellcheck="false"></textarea>
-                <div class="absolute bottom-4 right-4 flex gap-2">
-                     <button onclick="pasteCode()" class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-2 rounded-full shadow-lg text-xs font-bold">PASTE</button>
-                     <button onclick="copyCode()" class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 p-2 rounded-full shadow-lg text-xs font-bold">COPY</button>
+
+            <!-- Editor Area -->
+            <!-- UPDATED: relative container that takes all remaining space -->
+            <div class="flex-grow relative w-full h-full overflow-hidden">
+                
+                <!-- 
+                   UPDATED TEXTAREA: 
+                   1. pb-32: Huge bottom padding so you can scroll text ABOVE the floating buttons.
+                   2. outline-none: Removes blue glow.
+                -->
+                <textarea id="editor" 
+                    class="w-full h-full p-4 pb-32 bg-transparent font-mono text-sm focus:outline-none resize-none overflow-y-auto leading-relaxed" 
+                    spellcheck="false" 
+                    placeholder="// Write your code here..."></textarea>
+                
+                <!-- 
+                    UPDATED BUTTONS: 
+                    1. z-50: Ensures they float on top.
+                    2. Backdrop blur to make them pop against code.
+                -->
+                <div class="absolute bottom-6 right-6 flex gap-3 z-50">
+                     <button onclick="pasteCode()" class="bg-blue-100/90 backdrop-blur dark:bg-blue-900/90 text-blue-600 dark:text-blue-300 px-4 py-3 rounded-full shadow-xl text-xs font-bold border border-blue-200 dark:border-blue-700 active:scale-90 transition-transform">
+                        PASTE
+                     </button>
+                     <button onclick="copyCode()" class="bg-gray-100/90 backdrop-blur dark:bg-gray-700/90 text-gray-600 dark:text-gray-300 px-4 py-3 rounded-full shadow-xl text-xs font-bold border border-gray-200 dark:border-gray-600 active:scale-90 transition-transform">
+                        COPY
+                     </button>
                 </div>
             </div>
         </div>
     </main>
 
-    <div id="loader" class="fixed inset-0 bg-black/50 z-50 hidden flex justify-center items-center">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl"><div class="animate-spin text-4xl mb-2">⚙️</div><p>Processing...</p></div>
+    <!-- Loader -->
+    <div id="loader" class="fixed inset-0 bg-black/50 z-[100] hidden flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl flex flex-col items-center">
+            <div class="animate-spin text-4xl mb-3">⚙️</div>
+            <p class="font-medium">Processing...</p>
+        </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
