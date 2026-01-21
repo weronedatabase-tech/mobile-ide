@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile IDE</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        textarea { font-size: 16px; } /* iOS zoom fix */
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-200 h-screen overflow-hidden flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-md px-4 py-3 flex justify-between items-center z-10">
+        <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">IDE</span>
+        <div class="flex gap-3 items-center">
+            <button id="updateBtn" class="hidden text-xs bg-indigo-600 text-white px-2 py-1 rounded-full animate-pulse">Update</button>
+            <button onclick="logout()" id="logoutBtn" class="hidden text-xs text-red-500 font-bold">LOGOUT</button>
+            <button id="themeBtn" class="text-xl">🌗</button>
+        </div>
+    </header>
+
+    <main id="main" class="flex-grow relative overflow-hidden">
+
+        <!-- LOGIN -->
+        <div id="view-login" class="absolute inset-0 flex flex-col justify-center items-center p-6 text-center hidden">
+            <h1 class="text-3xl font-bold mb-2">My Workspace</h1>
+            <p class="text-gray-500 mb-8">Enter access key.</p>
+            <div class="w-full max-w-xs flex flex-col gap-4">
+                <input type="password" id="accessKeyInput" placeholder="Secret Key" class="p-3 border rounded-xl dark:bg-gray-800 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="login()" class="bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Unlock</button>
+            </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="absolute inset-0 flex flex-col p-4 hidden overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Projects</h2>
+                <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg active:bg-blue-700">+</button>
+            </div>
+            <div id="projectList" class="grid grid-cols-1 gap-4 pb-20"></div>
+        </div>
+
+        <!-- EDITOR -->
+        <div id="view-editor" class="absolute inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 hidden">
+            <div class="flex justify-between items-center p-2 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+                <button onclick="nav('dashboard')" class="text-gray-500 px-2">← Back</button>
+                <div class="flex gap-2">
+                    <button onclick="save()" class="text-sm bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded font-medium">Save</button>
+                    <button onclick="deploy()" class="text-sm bg-green-600 text-white px-4 py-2 rounded font-medium shadow-md">Deploy 🚀</button>
+                </div>
+            </div>
+            <div class="flex bg-gray-100 dark:bg-gray-900 border-b dark:border-gray-700">
+                <button onclick="setTab('gs')" id="tab-gs" class="flex-1 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600">Logic (GAS)</button>
+                <button onclick="setTab('html')" id="tab-html" class="flex-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent">UI (HTML)</button>
+            </div>
+            <div class="flex-grow relative">
+                <textarea id="editor" class="w-full h-full p-4 bg-transparent font-mono text-sm focus:outline-none resize-none" spellcheck="false"></textarea>
+                <div class="absolute bottom-4 right-4 flex gap-2">
+                     <button onclick="pasteCode()" class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-2 rounded-full shadow-lg text-xs font-bold">PASTE</button>
+                     <button onclick="copyCode()" class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 p-2 rounded-full shadow-lg text-xs font-bold">COPY</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="loader" class="fixed inset-0 bg-black/50 z-50 hidden flex justify-center items-center">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl"><div class="animate-spin text-4xl mb-2">⚙️</div><p>Processing...</p></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
