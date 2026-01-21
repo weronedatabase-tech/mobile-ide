@@ -1,6 +1,6 @@
 // --- CONFIGURATION ---
-// IMPORTANT: Paste your Google Apps Script Web App URL inside the quotes below
-const API_URL = "PASTE_YOUR_GAS_WEBAPP_URL_HERE"; 
+// Your specific Backend URL is now configured below:
+const API_URL = "https://script.google.com/macros/s/AKfycbxLAyqH_m33NSQi3TCzW0DR-gGQYWvXlGfngTnaVn_V5zYGUnpg17JzYxidgNc2v2TD/exec"; 
 
 // --- STATE MANAGEMENT ---
 let storedKey = localStorage.getItem('ide_key');
@@ -10,7 +10,7 @@ let activeTab = 'gs';
 
 // --- INITIALIZATION ---
 window.onload = () => {
-    // Check if user is logged in
+    // Check if user is logged in locally
     if (storedKey) {
         nav('dashboard');
         loadProjects();
@@ -76,8 +76,18 @@ async function api(action, payload = {}) {
         const res = await fetch(API_URL, {
             method: 'POST',
             // Send accessKey with every request for security
-            body: JSON.stringify({ action, accessKey: storedKey, ...payload })
+            body: JSON.stringify({ action: action, accessKey: storedKey, ...payload })
         });
+
+        // ERROR HANDLING: Check if response is JSON
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            // If we got HTML (like a 404 or Login page), throw a clear error
+            const text = await res.text();
+            console.error("Server returned HTML instead of JSON:", text);
+            throw new Error("Connection Failed. Permissions error or Wrong URL.");
+        }
+
         const json = await res.json();
         loading(false);
         
@@ -115,12 +125,12 @@ async function loadProjects() {
 async function createProject() {
     const name = prompt("Project Name:");
     if (!name) return;
-    const res = await api('CREATE_PROJECT', { name });
+    const res = await api('CREATE_PROJECT', { name: name });
     openProject(res.id, res.name, res.scriptId, res.files);
 }
 
 function openProject(id, name, scriptId, existingFiles = null) {
-    currentProject = { id, name, scriptId };
+    currentProject = { id: id, name: name, scriptId: scriptId };
     
     if (existingFiles) {
         files = existingFiles;
@@ -135,7 +145,7 @@ function openProject(id, name, scriptId, existingFiles = null) {
 
 async function save() {
     files[activeTab] = document.getElementById('editor').value;
-    await api('SAVE_PROJECT', { id: currentProject.id, files });
+    await api('SAVE_PROJECT', { id: currentProject.id, files: files });
     alert("Saved successfully!");
 }
 
@@ -147,14 +157,12 @@ async function deploy() {
     if(!confirm("Deploy to live web? This takes about 30 seconds.")) return;
     
     // 3. Execute Deployment
-    const res = await api('DEPLOY_PROJECT', { id: currentProject.id, files });
+    const res = await api('DEPLOY_PROJECT', { id: currentProject.id, files: files });
     
     // 4. Refresh Dashboard list so the link appears there next time
     loadProjects();
     
     // 5. Show Link (Mobile Friendly)
-    // We use prompt() because it allows the user to copy the text easily on mobile devices
-    // where window.open might be blocked.
     const url = res.appUrl;
     const userClickedOk = prompt("Deployment Successful! \n\nCopy your App URL below or click OK to open:", url);
     
