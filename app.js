@@ -1,5 +1,4 @@
 // --- CONFIGURATION ---
-// PASTE YOUR URL HERE
 const API_URL = "https://script.google.com/macros/s/AKfycbxLAyqH_m33NSQi3TCzW0DR-gGQYWvXlGfngTnaVn_V5zYGUnpg17JzYxidgNc2v2TD/exec"; 
 
 // --- STATE MANAGEMENT ---
@@ -16,6 +15,31 @@ window.onload = () => {
     } else {
         nav('login');
     }
+}
+
+// --- NEW FUNCTION: FORCE UPDATE ---
+async function forceUpdate() {
+    if(!confirm("Force update App to latest version?")) return;
+    
+    // 1. Show loader
+    loading(true);
+    
+    // 2. Unregister Service Workers
+    if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+            await registration.unregister();
+        }
+    }
+    
+    // 3. Delete All Caches
+    if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+    }
+    
+    // 4. Force Reload from Server
+    window.location.reload(true);
 }
 
 // --- AUTHENTICATION ---
@@ -88,13 +112,9 @@ async function api(action, payload = {}) {
 }
 
 // --- UTILITIES ---
-
-// THE FIX: Encodes text with Emojis to Base64 safely
 function encode64(str) {
     return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-        function toSolidBytes(match, p1) {
-            return String.fromCharCode('0x' + p1);
-    }));
+        function toSolidBytes(match, p1) { return String.fromCharCode('0x' + p1); }));
 }
 
 function loading(show) { 
@@ -148,13 +168,7 @@ async function openProject(id, name, scriptId, existingFiles = null) {
 
 async function save() {
     files[activeTab] = document.getElementById('editor').value;
-    
-    // THE FIX: Encode to Base64 before sending
-    const safeFiles = {
-        gs: encode64(files.gs),
-        html: encode64(files.html)
-    };
-
+    const safeFiles = { gs: encode64(files.gs), html: encode64(files.html) };
     await api('SAVE_PROJECT', { id: currentProject.id, files: safeFiles });
     alert("Saved successfully!");
 }
@@ -163,12 +177,7 @@ async function deploy() {
     files[activeTab] = document.getElementById('editor').value;
     if(!confirm("Deploy to live web? This takes about 30 seconds.")) return;
     
-    // THE FIX: Encode to Base64 before sending
-    const safeFiles = {
-        gs: encode64(files.gs),
-        html: encode64(files.html)
-    };
-
+    const safeFiles = { gs: encode64(files.gs), html: encode64(files.html) };
     const res = await api('DEPLOY_PROJECT', { id: currentProject.id, files: safeFiles });
     
     loadProjects();
@@ -202,14 +211,6 @@ if (localStorage.theme === 'dark') document.documentElement.classList.add('dark'
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
-        reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    document.getElementById('updateBtn').classList.remove('hidden');
-                }
-            });
-        });
+        // Registering logic only. Updates handled by forceUpdate() or network-first strategy.
     });
 }
-document.getElementById('updateBtn').onclick = () => window.location.reload();
