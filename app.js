@@ -17,28 +17,17 @@ window.onload = () => {
     }
 }
 
-// --- NEW FUNCTION: FORCE UPDATE ---
 async function forceUpdate() {
     if(!confirm("Force update App to latest version?")) return;
-    
-    // 1. Show loader
     loading(true);
-    
-    // 2. Unregister Service Workers
     if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let registration of registrations) {
-            await registration.unregister();
-        }
+        for (let registration of registrations) await registration.unregister();
     }
-    
-    // 3. Delete All Caches
     if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map(key => caches.delete(key)));
     }
-    
-    // 4. Force Reload from Server
     window.location.reload(true);
 }
 
@@ -166,6 +155,20 @@ async function openProject(id, name, scriptId, existingFiles = null) {
     }
 }
 
+// NEW: Delete Function
+async function deleteCurrentProject() {
+    if(!currentProject) return;
+    const confirmName = prompt(`To delete "${currentProject.name}", type "DELETE":`);
+    if(confirmName !== "DELETE") return;
+
+    await api('DELETE_PROJECT', { id: currentProject.id });
+    
+    alert("Project Deleted");
+    currentProject = null;
+    nav('dashboard');
+    loadProjects();
+}
+
 async function save() {
     files[activeTab] = document.getElementById('editor').value;
     const safeFiles = { gs: encode64(files.gs), html: encode64(files.html) };
@@ -211,6 +214,6 @@ if (localStorage.theme === 'dark') document.documentElement.classList.add('dark'
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
-        // Registering logic only. Updates handled by forceUpdate() or network-first strategy.
+        // Registered
     });
 }
