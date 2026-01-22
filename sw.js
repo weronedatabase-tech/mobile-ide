@@ -1,11 +1,11 @@
-const CACHE_NAME = 'ide-network-first-v3'; // Bump version to v3 to force update
+const CACHE_NAME = 'ide-network-first-v4'; // Updated version
 const ASSETS = [
     './',
     './index.html',
     './app.js',
     './manifest.json',
-    './icon-192.png',  // <-- Added
-    './icon-512.png',  // <-- Added
+    './icon-192.png',
+    './icon-512.png',
     'https://cdn.tailwindcss.com'
 ];
 
