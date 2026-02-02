@@ -17,7 +17,12 @@ let isAIViewOpen = false;
 // --- INIT ---
 window.onload = () => {
     if ('serviceWorker' in navigator) document.getElementById('updateBtn').classList.remove('hidden');
-    if (geminiKey) document.getElementById('geminiKeyInput').value = geminiKey; // visual only
+    
+    // Restore Saved Gemini Key Visual
+    if (geminiKey) {
+        const input = document.getElementById('geminiKeyInput');
+        if(input) input.value = geminiKey;
+    }
     
     if (storedKey) {
         nav('dashboard');
@@ -27,9 +32,10 @@ window.onload = () => {
     }
 }
 
-// --- AI CHAT LOGIC ---
+// --- AI LOGIC (MISSING IN PREV VERSION) ---
 function saveGeminiKey() {
-    const key = document.getElementById('geminiKeyInput').value.trim();
+    const input = document.getElementById('geminiKeyInput');
+    const key = input.value.trim();
     if(!key) return alert("Enter Key");
     geminiKey = key;
     localStorage.setItem('ide_gemini_key', key);
@@ -37,25 +43,19 @@ function saveGeminiKey() {
 }
 
 async function sendAI() {
-    if(!geminiKey) return alert("Please set Gemini API Key in Dashboard first.");
+    if(!geminiKey) return alert("Please save Gemini API Key in the Dashboard first.");
     const input = document.getElementById('aiInput');
     const prompt = input.value.trim();
     if(!prompt) return;
 
-    // Add User Message
     addChatMessage("User", prompt);
     input.value = "";
 
     try {
-        // Show typing indicator
         const loadingId = addChatMessage("System", "Thinking...");
-        
-        // Call Backend
         const responseText = await api('AI_CHAT', { prompt: prompt, apiKey: geminiKey });
-        
-        // Remove typing, Add AI Message
         document.getElementById(loadingId).remove();
-        addChatMessage("Gemini", responseText, true); // True = Enable Copy
+        addChatMessage("Gemini", responseText, true);
     } catch(e) {
         addChatMessage("Error", e.message);
     }
@@ -67,8 +67,7 @@ function addChatMessage(sender, text, isCode = false) {
     
     let content = text.replace(/\n/g, '<br>');
     if (isCode) {
-        // Simple heuristic to wrap code blocks
-        content = `<div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border dark:border-gray-700 my-1 whitespace-pre-wrap select-all font-mono text-[10px]">${text}</div>`;
+        content = `<div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border dark:border-gray-700 my-1 whitespace-pre-wrap select-all font-mono text-[10px] overflow-x-auto">${text}</div>`;
         content += `<button onclick="insertCodeFromChat(this)" class="text-[10px] text-blue-500 underline mt-1">Insert at Cursor</button>`;
     }
 
@@ -87,7 +86,6 @@ function insertCodeFromChat(btn) {
     const code = codeDiv.innerText;
     const editor = document.getElementById('editor');
     
-    // Insert at cursor logic
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
     const text = editor.value;
@@ -97,7 +95,6 @@ function insertCodeFromChat(btn) {
     editor.value = before + code + after;
     files[activeTab] = editor.value;
     
-    // Toggle back to full view to see code
     if(isAIViewOpen) toggleAI();
 }
 
@@ -107,9 +104,8 @@ function handleAIKey(e) { if(e.key === 'Enter') sendAI(); }
 // --- AUTH ---
 function login() {
     const input = document.getElementById('accessKeyInput');
-    const errorMsg = document.getElementById('loginError');
     const key = input.value.trim();
-    errorMsg.classList.add('hidden');
+    document.getElementById('loginError').classList.add('hidden');
     input.classList.remove('border-red-500');
 
     if (!key) { showLoginError(); return; }
@@ -133,8 +129,7 @@ function login() {
 function showLoginError() {
     const input = document.getElementById('accessKeyInput');
     document.getElementById('loginError').classList.remove('hidden');
-    input.classList.add('border-red-500');
-    input.classList.add('animate-pulse');
+    input.classList.add('border-red-500', 'animate-pulse');
     setTimeout(() => input.classList.remove('animate-pulse'), 500);
 }
 
@@ -199,7 +194,10 @@ async function api(action, payload = {}) {
     let json;
     try { json = JSON.parse(text); } 
     catch (err) { throw new Error("Server Error (HTML Response)"); }
-    if (!json.success) throw new Error(json.error || "Unknown Error");
+    if (!json.success) {
+        if(json.error && json.error.includes("Wrong Password")) throw new Error("Wrong Password");
+        throw new Error(json.error || "Unknown Error");
+    }
     return json.data;
 }
 
