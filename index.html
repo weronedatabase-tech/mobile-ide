@@ -9,7 +9,7 @@
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
-        textarea, input { font-size: 16px; } 
+        textarea, input, select { font-size: 16px; } 
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -39,7 +39,7 @@
     <!-- Main Content -->
     <main id="main" class="flex-grow relative w-full overflow-hidden">
         
-        <!-- LOGIN VIEW -->
+        <!-- LOGIN -->
         <div id="view-login" class="absolute inset-0 flex flex-col justify-center items-center p-6 text-center hidden z-40 bg-gray-50 dark:bg-gray-900">
             <div class="w-full max-w-xs flex flex-col gap-1">
                 <h1 class="text-3xl font-black mb-1 tracking-tight">Welcome Back</h1>
@@ -57,34 +57,24 @@
             </div>
         </div>
 
-        <!-- DASHBOARD VIEW -->
+        <!-- DASHBOARD -->
         <div id="view-dashboard" class="absolute inset-0 flex flex-col p-4 hidden overflow-y-auto pb-safe">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold tracking-tight">Your Apps</h2>
-                <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg flex items-center justify-center">+</button>
-            </div>
-
-            <!-- API KEY INPUT (RESTORED) -->
-            <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-xs font-bold text-purple-600 dark:text-purple-300 uppercase">Gemini API Key</label>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] underline text-purple-500">Get Key ↗</a>
-                </div>
                 <div class="flex gap-2">
-                    <input type="password" id="geminiKeyInput" placeholder="Paste key here" class="flex-grow p-2 text-sm rounded border dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:border-purple-500 transition-colors">
-                    <button onclick="saveGeminiKey()" class="bg-purple-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm active:scale-95">Save</button>
+                    <button onclick="openSettings()" class="bg-gray-100 dark:bg-gray-800 w-10 h-10 rounded-full text-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center">⚙️</button>
+                    <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg flex items-center justify-center">+</button>
                 </div>
             </div>
-
             <div id="projectList" class="grid grid-cols-1 gap-4 pb-24"></div>
         </div>
 
-        <!-- EDITOR VIEW -->
+        <!-- EDITOR -->
         <div id="view-editor" class="absolute inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 hidden h-full w-full">
             <div class="flex justify-between items-center px-3 py-2 bg-white dark:bg-gray-800 border-b dark:border-gray-700 flex-none z-10 shadow-sm">
                 <button onclick="nav('dashboard')" class="text-gray-500 px-2 flex items-center gap-1 text-sm font-medium">← Back</button>
                 <div class="flex gap-2 items-center">
-                    <button onclick="deleteCurrentProject()" class="text-gray-400 hover:text-red-500 px-2" title="Delete">🗑️</button>
+                    <button onclick="deleteCurrentProject()" class="text-gray-400 hover:text-red-500 px-2">🗑️</button>
                     <button onclick="toggleAI()" id="aiToggleBtn" class="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 px-3 py-1.5 rounded-lg font-bold border border-purple-200 dark:border-purple-800">AI Chat</button>
                     <button onclick="save()" class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg font-bold border border-gray-200 dark:border-gray-600">Save</button>
                     <button onclick="deploy()" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-md">Deploy</button>
@@ -119,6 +109,35 @@
             </div>
         </div>
     </main>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 z-[60] hidden flex justify-center items-center">
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeSettings()"></div>
+        <div class="relative bg-white dark:bg-gray-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl mx-4 border border-gray-200 dark:border-gray-700">
+            <h3 class="text-xl font-bold mb-4">AI Settings</h3>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini Model</label>
+                <select id="modelSelect" class="w-full p-3 rounded-xl border dark:bg-gray-900 dark:border-gray-700 outline-none">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Smart)</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
+                    <option value="gemini-pro">Gemini 1.0 Pro (Legacy)</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">API Key</label>
+                <input type="password" id="settingsKeyInput" placeholder="Enter new key to update..." class="w-full p-3 rounded-xl border dark:bg-gray-900 dark:border-gray-700 outline-none focus:border-blue-500">
+                <p id="keyStatus" class="text-[10px] mt-1 text-gray-400">Status: Checking...</p>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeSettings()" class="flex-1 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl font-bold text-sm">Cancel</button>
+                <button onclick="saveSettings()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg">Save Settings</button>
+            </div>
+        </div>
+    </div>
 
     <div id="loader" class="fixed inset-0 z-[100] hidden flex justify-center items-center">
         <div class="absolute inset-0 bg-gray-900/20 dark:bg-gray-900/60 backdrop-blur-sm"></div>
