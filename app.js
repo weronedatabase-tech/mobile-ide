@@ -8,7 +8,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxLAyqH_m33NSQi3TCzW0DR
 
 // --- STATE ---
 let storedKey = localStorage.getItem('ide_key');
-let geminiKey = localStorage.getItem('ide_gemini_key');
 let currentProject = null;
 let files = { gs: '', html: '' };
 let activeTab = 'gs';
@@ -17,13 +16,6 @@ let isAIViewOpen = false;
 // --- INIT ---
 window.onload = () => {
     if ('serviceWorker' in navigator) document.getElementById('updateBtn').classList.remove('hidden');
-    
-    // Restore Saved Gemini Key Visual
-    if (geminiKey) {
-        const input = document.getElementById('geminiKeyInput');
-        if(input) input.value = geminiKey;
-    }
-    
     if (storedKey) {
         nav('dashboard');
         loadProjects();
@@ -32,18 +24,43 @@ window.onload = () => {
     }
 }
 
-// --- AI LOGIC (MISSING IN PREV VERSION) ---
-function saveGeminiKey() {
-    const input = document.getElementById('geminiKeyInput');
-    const key = input.value.trim();
-    if(!key) return alert("Enter Key");
-    geminiKey = key;
-    localStorage.setItem('ide_gemini_key', key);
-    alert("API Key Saved!");
+// --- SETTINGS LOGIC ---
+async function openSettings() {
+    document.getElementById('settingsModal').classList.remove('hidden');
+    document.getElementById('keyStatus').innerText = "Fetching current settings...";
+    try {
+        const settings = await api('GET_SETTINGS');
+        document.getElementById('modelSelect').value = settings.model;
+        document.getElementById('keyStatus').innerText = settings.hasKey ? "✅ API Key is set in backend" : "⚠️ No API Key set";
+        document.getElementById('keyStatus').className = settings.hasKey ? "text-[10px] mt-1 text-green-500 font-bold" : "text-[10px] mt-1 text-red-500 font-bold";
+    } catch(e) {
+        document.getElementById('keyStatus').innerText = "Error fetching settings.";
+    }
 }
 
+function closeSettings() {
+    document.getElementById('settingsModal').classList.add('hidden');
+}
+
+async function saveSettings() {
+    const key = document.getElementById('settingsKeyInput').value.trim();
+    const model = document.getElementById('modelSelect').value;
+    
+    loading(true);
+    try {
+        await api('SAVE_SETTINGS', { apiKey: key, model: model });
+        document.getElementById('settingsKeyInput').value = ""; // Clear input for security
+        closeSettings();
+        alert("Settings Saved!");
+    } catch(e) {
+        alert("Error saving: " + e.message);
+    } finally {
+        loading(false);
+    }
+}
+
+// --- AI CHAT LOGIC ---
 async function sendAI() {
-    if(!geminiKey) return alert("Please save Gemini API Key in the Dashboard first.");
     const input = document.getElementById('aiInput');
     const prompt = input.value.trim();
     if(!prompt) return;
@@ -53,7 +70,8 @@ async function sendAI() {
 
     try {
         const loadingId = addChatMessage("System", "Thinking...");
-        const responseText = await api('AI_CHAT', { prompt: prompt, apiKey: geminiKey });
+        // Updated: No longer sending geminiKey from frontend
+        const responseText = await api('AI_CHAT', { prompt: prompt });
         document.getElementById(loadingId).remove();
         addChatMessage("Gemini", responseText, true);
     } catch(e) {
@@ -64,18 +82,15 @@ async function sendAI() {
 function addChatMessage(sender, text, isCode = false) {
     const history = document.getElementById('chatHistory');
     const id = "msg-" + Date.now();
-    
     let content = text.replace(/\n/g, '<br>');
     if (isCode) {
         content = `<div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border dark:border-gray-700 my-1 whitespace-pre-wrap select-all font-mono text-[10px] overflow-x-auto">${text}</div>`;
         content += `<button onclick="insertCodeFromChat(this)" class="text-[10px] text-blue-500 underline mt-1">Insert at Cursor</button>`;
     }
-
     const div = document.createElement('div');
     div.id = id;
     div.className = "mb-2 pb-2 border-b border-gray-100 dark:border-gray-800 last:border-0";
     div.innerHTML = `<strong class="text-purple-600 dark:text-purple-400 block mb-1">${sender}:</strong> <div class="text-gray-700 dark:text-gray-300">${content}</div>`;
-    
     history.appendChild(div);
     history.scrollTop = history.scrollHeight;
     return id;
@@ -85,21 +100,15 @@ function insertCodeFromChat(btn) {
     const codeDiv = btn.previousElementSibling;
     const code = codeDiv.innerText;
     const editor = document.getElementById('editor');
-    
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
     const text = editor.value;
-    const before = text.substring(0, start);
-    const after = text.substring(end, text.length);
-    
-    editor.value = before + code + after;
+    editor.value = text.substring(0, start) + code + text.substring(end);
     files[activeTab] = editor.value;
-    
     if(isAIViewOpen) toggleAI();
 }
 
 function handleAIKey(e) { if(e.key === 'Enter') sendAI(); }
-
 
 // --- AUTH ---
 function login() {
