@@ -129,15 +129,17 @@
                 <div id="aiContainer" class="w-full h-0 border-t-4 border-purple-500/20 bg-white dark:bg-gray-900 relative transition-all duration-300 overflow-hidden flex flex-col">
                     <div class="flex justify-between items-center bg-purple-50 dark:bg-gray-800 px-3 py-1 text-xs text-purple-600 font-bold border-b dark:border-gray-700">
                         <span>Google AI Studio</span>
-                        <a href="https://aistudio.google.com/" target="_blank" class="underline">Open in New Tab ↗</a>
+                        <!-- UPDATED LINK -->
+                        <a href="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faistudio.google.com%2F&dsh=S-954771412%3A1770031887989635&ifkv=AXbMIuD1Ab_lYqTSTehYah2JR0LWlFrhniEAe_2bgIwRqIcJn3DsQ0XNizbCccARj1zj52lh_BQt&flowName=GlifWebSignIn&flowEntry=ServiceLogin" target="_blank" class="underline">Open in New Tab ↗</a>
                     </div>
-                    <!-- Iframe -->
-                    <iframe src="https://aistudio.google.com/" class="w-full h-full border-none bg-white" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+                    <!-- UPDATED IFRAME SRC -->
+                    <iframe src="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faistudio.google.com%2F&dsh=S-954771412%3A1770031887989635&ifkv=AXbMIuD1Ab_lYqTSTehYah2JR0LWlFrhniEAe_2bgIwRqIcJn3DsQ0XNizbCccARj1zj52lh_BQt&flowName=GlifWebSignIn&flowEntry=ServiceLogin" class="w-full h-full border-none bg-white" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
                     
                     <!-- Overlay if Iframe blocked -->
                     <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center bg-gray-100/50 dark:bg-gray-900/50 backdrop-blur-sm opacity-0 hover:opacity-100 hover:pointer-events-auto transition-opacity duration-300">
                         <p class="text-xs text-gray-500 mb-2 font-bold">If connection is refused:</p>
-                        <a href="https://aistudio.google.com/" target="_blank" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">Launch External Window</a>
+                        <!-- UPDATED FALLBACK BUTTON -->
+                        <a href="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faistudio.google.com%2F&dsh=S-954771412%3A1770031887989635&ifkv=AXbMIuD1Ab_lYqTSTehYah2JR0LWlFrhniEAe_2bgIwRqIcJn3DsQ0XNizbCccARj1zj52lh_BQt&flowName=GlifWebSignIn&flowEntry=ServiceLogin" target="_blank" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">Launch External Window</a>
                     </div>
                 </div>
 
