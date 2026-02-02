@@ -1,3 +1,13 @@
+// --- KILL SWITCH FOR STUCK SERVICE WORKERS ---
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+            console.log('Unregistering SW:', registration);
+            registration.unregister();
+        }
+    });
+}
+
 // --- CONFIGURATION ---
 const API_URL = "https://script.google.com/macros/s/AKfycbxLAyqH_m33NSQi3TCzW0DR-gGQYWvXlGfngTnaVn_V5zYGUnpg17JzYxidgNc2v2TD/exec"; 
 
@@ -15,20 +25,6 @@ window.onload = () => {
     } else {
         nav('login');
     }
-}
-
-async function forceUpdate() {
-    if(!confirm("Force update App to latest version?")) return;
-    loading(true);
-    if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let registration of registrations) await registration.unregister();
-    }
-    if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(key => caches.delete(key)));
-    }
-    window.location.reload(true);
 }
 
 // --- AUTHENTICATION ---
@@ -76,8 +72,10 @@ function setTab(tab) {
 async function api(action, payload = {}) {
     loading(true);
     try {
+        // cache: "no-store" ensures we never use a stale cached response for API calls
         const res = await fetch(API_URL, {
             method: 'POST',
+            cache: "no-store", 
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ action: action, accessKey: storedKey, ...payload })
         });
@@ -85,7 +83,10 @@ async function api(action, payload = {}) {
         const text = await res.text();
         let json;
         try { json = JSON.parse(text); } 
-        catch (err) { throw new Error("Server returned HTML (Error) instead of JSON."); }
+        catch (err) { 
+            console.error("HTML Error:", text);
+            throw new Error("Server returned HTML (Error) instead of JSON."); 
+        }
 
         loading(false);
         if (!json.success) {
@@ -95,7 +96,8 @@ async function api(action, payload = {}) {
         return json.data;
     } catch (e) {
         loading(false);
-        alert("Error: " + e.message);
+        // More descriptive error for debugging
+        alert("Connection Error: " + e.message + "\n\nTry clearing browser cache.");
         throw e;
     }
 }
@@ -155,7 +157,6 @@ async function openProject(id, name, scriptId, existingFiles = null) {
     }
 }
 
-// NEW: Delete Function
 async function deleteCurrentProject() {
     if(!currentProject) return;
     const confirmName = prompt(`To delete "${currentProject.name}", type "DELETE":`);
@@ -205,15 +206,23 @@ function copyCode() {
     alert("Copied to clipboard"); 
 }
 
+// Force Update UI Button
+async function forceUpdate() {
+    if(!confirm("Force update App?")) return;
+    if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) await registration.unregister();
+    }
+    if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+    }
+    window.location.reload(true);
+}
+
 const themeBtn = document.getElementById('themeBtn');
 themeBtn.onclick = () => { 
     document.documentElement.classList.toggle('dark'); 
     localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); 
 };
 if (localStorage.theme === 'dark') document.documentElement.classList.add('dark');
-
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-        // Registered
-    });
-}
