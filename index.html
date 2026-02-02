@@ -10,13 +10,10 @@
     <style>
         body { -webkit-tap-highlight-color: transparent; }
         textarea, input { font-size: 16px; } 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
-        
-        /* Split Screen Utilities */
         .h-half { height: 50% !important; }
         .h-full-custom { height: 100% !important; }
     </style>
@@ -29,129 +26,102 @@
             <span class="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">IDE</span>
         </div>
         <div class="flex gap-4 items-center">
-            <!-- MODERN UPDATE BUTTON -->
-            <button onclick="forceUpdate()" id="updateBtn" class="relative group hidden">
-                <div class="absolute -inset-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
-                <div class="relative bg-white dark:bg-gray-800 rounded-full p-1.5 border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400">
+            <button onclick="forceUpdate()" id="updateBtn" class="hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-full p-1.5 border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400">
                     <svg class="w-5 h-5 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </div>
             </button>
-            
-            <button onclick="logout()" id="logoutBtn" class="hidden text-xs font-bold text-gray-400 hover:text-red-500 transition-colors">LOGOUT</button>
-            <button id="themeBtn" class="text-lg opacity-80 hover:opacity-100 transition-opacity">🌗</button>
+            <button onclick="logout()" id="logoutBtn" class="hidden text-xs font-bold text-gray-400 hover:text-red-500">LOGOUT</button>
+            <button id="themeBtn" class="text-lg opacity-80">🌗</button>
         </div>
     </header>
 
     <!-- Main Content -->
     <main id="main" class="flex-grow relative w-full overflow-hidden">
         
-        <!-- LOGIN VIEW -->
+        <!-- LOGIN -->
         <div id="view-login" class="absolute inset-0 flex flex-col justify-center items-center p-6 text-center hidden z-40 bg-gray-50 dark:bg-gray-900">
             <div class="w-full max-w-xs flex flex-col gap-1">
                 <h1 class="text-3xl font-black mb-1 tracking-tight">Welcome Back</h1>
                 <p class="text-gray-500 dark:text-gray-400 mb-8 text-sm">Access your secure workspace</p>
-                
-                <!-- ERROR MESSAGE CONTAINER -->
                 <div id="loginError" class="hidden bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs py-2 px-3 rounded-lg mb-2 flex items-center gap-2 animate-bounce">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>Incorrect Password</span>
                 </div>
-
-                <!-- PASSWORD FIELD -->
                 <div class="relative w-full">
                     <input type="password" id="accessKeyInput" placeholder="Secret Key" 
-                           class="w-full p-4 pr-12 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-lg transition-all"
+                           class="w-full p-4 pr-12 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-lg"
                            onkeydown="handleLoginKey(event)">
-                    
-                    <!-- SHOW/HIDE BUTTON -->
-                    <button onclick="togglePassword('accessKeyInput', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 p-1">
-                        <!-- Eye Icon -->
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    </button>
+                    <button onclick="togglePassword('accessKeyInput', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 p-1">👁️</button>
                 </div>
-
-                <button onclick="login()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold shadow-lg shadow-blue-500/30 active:scale-95 transition-all">Unlock Workspace</button>
+                <button onclick="login()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold shadow-lg">Unlock Workspace</button>
             </div>
         </div>
 
-        <!-- DASHBOARD VIEW -->
+        <!-- DASHBOARD -->
         <div id="view-dashboard" class="absolute inset-0 flex flex-col p-4 hidden overflow-y-auto pb-safe">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold tracking-tight">Your Apps</h2>
-                <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg shadow-blue-500/30 active:scale-90 transition-transform flex items-center justify-center">+</button>
+                <button onclick="createProject()" class="bg-blue-600 text-white w-10 h-10 rounded-full text-2xl shadow-lg flex items-center justify-center">+</button>
+            </div>
+            <!-- API Key Input for AI -->
+            <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-purple-600 dark:text-purple-300 uppercase">Gemini API Key</label>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] underline text-purple-500">Get Key ↗</a>
+                </div>
+                <div class="flex gap-2">
+                    <input type="password" id="geminiKeyInput" placeholder="Paste key here" class="flex-grow p-2 text-sm rounded border dark:bg-gray-800 dark:border-gray-700">
+                    <button onclick="saveGeminiKey()" class="bg-purple-600 text-white px-3 py-1 rounded text-xs font-bold">Save</button>
+                </div>
             </div>
             <div id="projectList" class="grid grid-cols-1 gap-4 pb-24"></div>
         </div>
 
-        <!-- EDITOR VIEW (SPLIT SCREEN) -->
+        <!-- EDITOR (Split View) -->
         <div id="view-editor" class="absolute inset-0 flex flex-col bg-gray-50 dark:bg-gray-900 hidden h-full w-full">
-            
-            <!-- Toolbar -->
             <div class="flex justify-between items-center px-3 py-2 bg-white dark:bg-gray-800 border-b dark:border-gray-700 flex-none z-10 shadow-sm">
-                <button onclick="nav('dashboard')" class="text-gray-500 px-2 flex items-center gap-1 text-sm font-medium hover:text-gray-800 dark:hover:text-gray-200">
-                    ← Back
-                </button>
+                <button onclick="nav('dashboard')" class="text-gray-500 px-2 flex items-center gap-1 text-sm font-medium">← Back</button>
                 <div class="flex gap-2 items-center">
-                    <button onclick="deleteCurrentProject()" class="text-gray-400 hover:text-red-500 px-2" title="Delete">🗑️</button>
-                    <!-- Toggle AI Panel Button -->
-                    <button onclick="toggleAI()" id="aiToggleBtn" class="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 px-3 py-1.5 rounded-lg font-bold border border-purple-200 dark:border-purple-800">
-                        AI Studio
-                    </button>
+                    <button onclick="deleteCurrentProject()" class="text-gray-400 hover:text-red-500 px-2">🗑️</button>
+                    <button onclick="toggleAI()" id="aiToggleBtn" class="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 px-3 py-1.5 rounded-lg font-bold border border-purple-200 dark:border-purple-800">AI Chat</button>
                     <button onclick="save()" class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg font-bold border border-gray-200 dark:border-gray-600">Save</button>
-                    <button onclick="deploy()" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-md shadow-green-500/20">Deploy</button>
+                    <button onclick="deploy()" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold shadow-md">Deploy</button>
                 </div>
             </div>
 
-            <!-- Tabs -->
             <div class="flex bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-700 flex-none z-10 text-xs font-bold uppercase tracking-wider">
                 <button onclick="setTab('gs')" id="tab-gs" class="flex-1 py-3 border-b-2 border-blue-600 text-blue-600">Logic</button>
                 <button onclick="setTab('html')" id="tab-html" class="flex-1 py-3 text-gray-400 border-b-2 border-transparent">UI</button>
             </div>
 
-            <!-- MAIN SPLIT CONTAINER -->
             <div class="flex-grow flex flex-col overflow-hidden relative">
-                
-                <!-- TOP HALF: CODE EDITOR -->
+                <!-- Code Editor -->
                 <div id="codeContainer" class="w-full h-full relative transition-all duration-300">
-                    <textarea id="editor" 
-                        class="w-full h-full p-4 bg-transparent font-mono text-sm focus:outline-none resize-none overflow-y-auto leading-relaxed" 
-                        spellcheck="false" 
-                        placeholder="// Write your code here..."></textarea>
-                    
-                    <!-- Floating Actions (Copy/Paste) -->
+                    <textarea id="editor" class="w-full h-full p-4 bg-transparent font-mono text-sm focus:outline-none resize-none overflow-y-auto leading-relaxed" spellcheck="false" placeholder="// Write code..."></textarea>
                     <div class="absolute bottom-4 right-4 flex gap-2 z-20">
-                         <button onclick="pasteCode()" class="bg-blue-600/90 backdrop-blur text-white px-3 py-2 rounded-full shadow-lg text-[10px] font-bold active:scale-90">PASTE</button>
-                         <button onclick="copyCode()" class="bg-gray-700/90 backdrop-blur text-white px-3 py-2 rounded-full shadow-lg text-[10px] font-bold active:scale-90">COPY</button>
+                         <button onclick="pasteCode()" class="bg-blue-600/90 backdrop-blur text-white px-3 py-2 rounded-full shadow-lg text-[10px] font-bold">PASTE</button>
+                         <button onclick="copyCode()" class="bg-gray-700/90 backdrop-blur text-white px-3 py-2 rounded-full shadow-lg text-[10px] font-bold">COPY</button>
                     </div>
                 </div>
 
-                <!-- BOTTOM HALF: AI STUDIO IFRAME -->
-                <div id="aiContainer" class="w-full h-0 border-t-4 border-purple-500/20 bg-white dark:bg-gray-900 relative transition-all duration-300 overflow-hidden flex flex-col">
-                    <div class="flex justify-between items-center bg-purple-50 dark:bg-gray-800 px-3 py-1 text-xs text-purple-600 font-bold border-b dark:border-gray-700">
-                        <span>Google AI Studio</span>
-                        <!-- UPDATED LINK -->
-                        <a href="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faistudio.google.com%2F&dsh=S-954771412%3A1770031887989635&ifkv=AXbMIuD1Ab_lYqTSTehYah2JR0LWlFrhniEAe_2bgIwRqIcJn3DsQ0XNizbCccARj1zj52lh_BQt&flowName=GlifWebSignIn&flowEntry=ServiceLogin" target="_blank" class="underline">Open in New Tab ↗</a>
+                <!-- Custom AI Chat Interface -->
+                <div id="aiContainer" class="w-full h-0 border-t-4 border-purple-500/20 bg-gray-100 dark:bg-gray-800 relative transition-all duration-300 overflow-hidden flex flex-col">
+                    <!-- Chat History -->
+                    <div id="chatHistory" class="flex-grow p-4 overflow-y-auto space-y-3 font-mono text-xs">
+                        <div class="text-center text-gray-400 mt-4">Ask Gemini to write code...</div>
                     </div>
-                    <!-- UPDATED IFRAME SRC -->
-                    <iframe src="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faistudio.google.com%2F&dsh=S-954771412%3A1770031887989635&ifkv=AXbMIuD1Ab_lYqTSTehYah2JR0LWlFrhniEAe_2bgIwRqIcJn3DsQ0XNizbCccARj1zj52lh_BQt&flowName=GlifWebSignIn&flowEntry=ServiceLogin" class="w-full h-full border-none bg-white" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-                    
-                    <!-- Overlay if Iframe blocked -->
-                    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center bg-gray-100/50 dark:bg-gray-900/50 backdrop-blur-sm opacity-0 hover:opacity-100 hover:pointer-events-auto transition-opacity duration-300">
-                        <p class="text-xs text-gray-500 mb-2 font-bold">If connection is refused:</p>
-                        <!-- UPDATED FALLBACK BUTTON -->
-                        <a href="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Faistudio.google.com%2F&dsh=S-954771412%3A1770031887989635&ifkv=AXbMIuD1Ab_lYqTSTehYah2JR0LWlFrhniEAe_2bgIwRqIcJn3DsQ0XNizbCccARj1zj52lh_BQt&flowName=GlifWebSignIn&flowEntry=ServiceLogin" target="_blank" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">Launch External Window</a>
+                    <!-- Input Area -->
+                    <div class="p-2 bg-white dark:bg-gray-900 border-t dark:border-gray-700 flex gap-2">
+                        <input id="aiInput" type="text" placeholder="Describe functionality..." class="flex-grow p-2 rounded border dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500" onkeydown="handleAIKey(event)">
+                        <button onclick="sendAI()" class="bg-purple-600 text-white px-3 rounded font-bold">Send</button>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 
-    <!-- MODERN LOADING INDICATOR -->
     <div id="loader" class="fixed inset-0 z-[100] hidden flex justify-center items-center">
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-gray-900/20 dark:bg-gray-900/60 backdrop-blur-sm"></div>
-        <!-- Spinner -->
         <div class="relative bg-white/90 dark:bg-gray-800/90 p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-white/20">
             <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
             <p class="font-bold text-gray-700 dark:text-gray-200 tracking-wide text-sm animate-pulse">PROCESSING</p>
