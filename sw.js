@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ide-network-first-v4'; // Updated version
+const CACHE_NAME = 'ide-v5-fix'; // Updated version
 const ASSETS = [
     './',
     './index.html',
@@ -25,9 +25,15 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+    // THE FIX: Ignore API calls (POST) and let them go straight to the network
+    if (e.request.method !== 'GET') {
+        return;
+    }
+
     e.respondWith(
         fetch(e.request)
             .then(res => {
+                // Cache valid GET responses
                 if (res && res.status === 200 && res.type === 'basic') {
                     const clone = res.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
@@ -35,6 +41,7 @@ self.addEventListener('fetch', e => {
                 return res;
             })
             .catch(() => {
+                // If offline, try cache
                 return caches.match(e.request);
             })
     );
